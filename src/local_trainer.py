@@ -62,16 +62,14 @@ class Trainer():
                 optimizer.step()
 
                 if not idx % 10 and args.verbose:
-                    print(f"\t\tCommunication round {round+1} | Device {device_num} \
-                        | Epoch {epoch} | Batch {idx} | Training loss: {loss.item()}\n")
+                    print(f"\t\tCommunication round {round+1} | Device {device_num+1} | Epoch {epoch+1} | Batch {idx+1} | Training loss: {loss.item()}\n")
 
                 batch_losses.append(loss.item())
 
             avg_batch_loss = sum(batch_losses)/len(batch_losses)
             losses.append(avg_batch_loss)
 
-            print(f"\tCommunication round {round+1} | Device {device_num} \
-                | Epoch {epoch} | Training loss: {avg_batch_loss}")
+            print(f"\tCommunication round {round+1} | Device {device_num+1} | Epoch {epoch+1} | Training loss: {avg_batch_loss}")
 
             # Learning rate decay
             for param_group in optimizer.param_groups:
@@ -109,7 +107,6 @@ class Tester():
                 batch_accuracy = (predicted == target).sum().item()/target.size(0)
 
                 if not idx % 10 and args.verbose:
-                    print(f"\t\tCommunication round {round+1} | Batch {idx} \
-                        | Testing loss: {loss.item()} | Testing accuracy: {batch_accuracy}")
+                    print(f"\t\tCommunication round {round+1} | Batch {idx} | Testing loss: {loss.item()} | Testing accuracy: {batch_accuracy}")
 
         return correct/total, sum(losses)/len(losses)

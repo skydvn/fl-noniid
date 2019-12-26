@@ -31,11 +31,11 @@ class Parser():
 
         # IIDness setting
         parser.add_argument("--iid", help="data is iid or not", 
-                            default=True, type=bool)
-        parser.add_argument("--noniidness", help="degree of non-iid", 
-                            default=0.5, type=float)
+                            default=1, type=int)
+        parser.add_argument("--noniidness", help="percentage of non-iid data per device", 
+                            default=50, type=float)
         parser.add_argument("--equal_dist", help="equal data distribution across devices", 
-                            default=True, type=bool)
+                            default=1, type=int)
         parser.add_argument("--class_per_device", help="number of classes per device (non-iid, conflict with noniidness)", 
                             default=0, type=int)
 
@@ -52,6 +52,6 @@ class Parser():
         parser.add_argument("--verbose", help="verbose logging", 
                             default=0, type=int)
         parser.add_argument("--save_results", help="save results to file", 
-                            default=True, type=bool)
+                            default=1, type=int)
 
         return parser.parse_args()
