@@ -107,6 +107,10 @@ class Tester():
                 batch_accuracy = (predicted == target).sum().item()/target.size(0)
 
                 if not idx % 10 and args.verbose:
-                    print(f"\t\tCommunication round {round+1} | Batch {idx} | Testing loss: {loss.item()} | Testing accuracy: {batch_accuracy}")
+                    if args.learning == "f":
+                        print(f"\t\tCommunication round {round+1} | Batch {idx} | Testing loss: {loss.item()} | Testing accuracy: {batch_accuracy}")
+                    else:
+                        print(f"\t\tEpoch {round+1} | Batch {idx} | Testing loss: {loss.item()} | Testing accuracy: {batch_accuracy}")
 
         return correct/total, sum(losses)/len(losses)
+

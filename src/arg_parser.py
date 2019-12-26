@@ -17,7 +17,7 @@ class Parser():
         parser.add_argument("--lr_decay", help="learning rate decay", 
                             default=1, type=float)
         parser.add_argument("--sgd_momentum", help="sgd momentum", 
-                            default=0.5, type=float)
+                            default=0, type=float)
         parser.add_argument("--optim", help="optimizer (sgd, adagrad, adam)", 
                             default="sgd", type=str)
         parser.add_argument("--dataset", help="dataset (mnist, cifar100)", 
@@ -53,5 +53,7 @@ class Parser():
                             default=0, type=int)
         parser.add_argument("--save_results", help="save results to file", 
                             default=1, type=int)
+        parser.add_argument("--learning", help="federated learning (f) or centralized learning (c)", 
+                            default="f", type=str)
 
         return parser.parse_args()

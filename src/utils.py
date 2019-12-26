@@ -57,10 +57,13 @@ class Utils():
                 transform=transform
             )
 
-        if args.iid:
-            user_idxs = self.iid_dist(train_dataset, args)
+        if args.learning == "f":
+            if args.iid:
+                user_idxs = self.iid_dist(train_dataset, args)
+            else:
+                user_idxs = self.noniid_dist(train_dataset, args)
         else:
-            user_idxs = self.noniid_dist(train_dataset, args)
+            user_idxs = []
 
         return train_dataset, test_dataset, user_idxs
 
@@ -278,19 +281,30 @@ class Utils():
         f = open(f"./results/{datetime.now()}_{args.dataset}_{args.optim}_{iid}.csv", "w")
 
         with f:
-            fnames = ["round", "average weight differences",
-                      "train losses", "test losses", "test accuracies"]
+            if args.learning == "f":
+                fnames = ["round", "average weight differences",
+                        "train losses", "test losses", "test accuracies"]
+            else:
+                fnames = ["round", "train losses", 
+                        "test losses", "test accuracies"]
             writer = csv.DictWriter(f, fieldnames=fnames)
 
             writer.writeheader()
 
             for i in range(len(avg_weights_diff)):
-                writer.writerow({
-                    "round": i+1,
-                    "average weight differences": avg_weights_diff[i],
-                    "train losses": global_train_losses[i],
-                    "test losses": global_test_losses[i],
-                    "test accuracies": global_accuracies[i]
-                })
-
+                if args.learning == "f":
+                    writer.writerow({
+                        "round": i+1,
+                        "average weight differences": avg_weights_diff[i],
+                        "train losses": global_train_losses[i],
+                        "test losses": global_test_losses[i],
+                        "test accuracies": global_accuracies[i]
+                    })
+                else:
+                    writer.writerow({
+                        "round": i+1,
+                        "train losses": global_train_losses[i],
+                        "test losses": global_test_losses[i],
+                        "test accuracies": global_accuracies[i]
+                    })
         print(f"Results stored in results/{datetime.now()}_{args.dataset}_{args.optim}_{iid}.csv")
