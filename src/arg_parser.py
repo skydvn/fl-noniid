@@ -11,7 +11,7 @@ class Parser():
         parser.add_argument("--epoch", help="local epochs per communication round", 
                             default=10, type=int)
         parser.add_argument("--round", help="communication rounds", 
-                            default=10, type=int)
+                            default=50, type=int)
         parser.add_argument("--lr", help="learning rate",
                             default=0.01, type=float)
         parser.add_argument("--sgd_momentum", help="sgd momentum", 

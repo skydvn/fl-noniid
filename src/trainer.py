@@ -65,7 +65,7 @@ class Trainer():
                 optimizer.step()
 
                 if args.learning == "f":
-                    if not idx % 10 and args.verbose:
+                    if args.verbose:
                         print(f"\t\tCommunication round {round+1} | Device {device_num+1} | Epoch {epoch+1} | Batch {idx+1} | Training loss: {loss.item()}\n")
                 else:
                     if not idx % 10:
@@ -127,7 +127,10 @@ class Tester():
 
         # Print metrics
         cm = ConfusionMatrix(actual_vector=targets, predict_vector=predicts)
-        # print(cm)
+        
+        if args.verbose:
+            print(cm)
+
         auc = list(cm.AUC.values())
 
         return correct/total, sum(losses)/len(losses), sum(auc)/len(auc), cm.Kappa
