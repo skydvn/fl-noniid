@@ -1,7 +1,4 @@
 src/data/
-virtualenv/
-src/results/
-src/graphs
 .DS_Store
 
 # Byte-compiled / optimized / DLL files

@@ -66,7 +66,7 @@ class Trainer():
 
                 if args.learning == "f":
                     if args.verbose:
-                        print(f"\t\tCommunication round {round+1} | Device {device_num+1} | Epoch {epoch+1} | Batch {idx+1} | Training loss: {loss.item()}\n")
+                        print(f"\tCommunication round {round+1} | Device {device_num+1} | Epoch {epoch+1} | Batch {idx+1} | Training loss: {loss.item()}")
                 else:
                     if not idx % 10:
                         print(f"\tEpoch {round+1} | {idx*args.bs}/{len(dataset)} | Training loss: {loss.item()}")
