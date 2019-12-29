@@ -14,31 +14,35 @@ class Parser():
                             default=10, type=int)
         parser.add_argument("--lr", help="learning rate",
                             default=0.01, type=float)
-        parser.add_argument("--lr_decay", help="learning rate decay", 
-                            default=1, type=float)
         parser.add_argument("--sgd_momentum", help="sgd momentum", 
                             default=0, type=float)
         parser.add_argument("--optim", help="optimizer (sgd, adagrad, adam)", 
                             default="sgd", type=str)
-        parser.add_argument("--dataset", help="dataset (mnist, cifar100)", 
+        parser.add_argument("--dataset", help="dataset (mnist, cifar10)", 
                             default="mnist", type=str)
-        parser.add_argument("--model", help="model (lenet, resnet18, vgg19)", 
+        parser.add_argument("--model", help="model (lenet, resnet18, vgg11)", 
                             default="lenet", type=str)
         parser.add_argument("--frac", help="fraction of devices", 
                             default=0.1, type=float)
         parser.add_argument("--num_devices", help="number of devices", 
                             default=100, type=int)
-
+        parser.add_argument("--max_data_per_device", help="max amount of data per device", 
+                            default=0, type=int)
+                            
         # IIDness setting
         parser.add_argument("--iid", help="data is iid or not", 
                             default=1, type=int)
         parser.add_argument("--noniidness", help="percentage of non-iid data per device", 
-                            default=50, type=float)
+                            default=0, type=float)
         parser.add_argument("--equal_dist", help="equal data distribution across devices", 
                             default=1, type=int)
         parser.add_argument("--class_per_device", help="number of classes per device (non-iid, conflict with noniidness)", 
                             default=0, type=int)
 
+        # Optimization technique
+        parser.add_argument("--warmup_model", help="warmup model with ~60% accuracy", 
+                            default=0, type=int)
+                            
         # Train until options
         parser.add_argument("--train_until_acc", help="train until accuracy reaches x%", 
                             default=100, type=float)
@@ -55,5 +59,6 @@ class Parser():
                             default=1, type=int)
         parser.add_argument("--learning", help="federated learning (f) or centralized learning (c)", 
                             default="f", type=str)
-
+        parser.add_argument("--cal_para_diff", help="calculate parameters' difference", 
+                            default=0, type=int)
         return parser.parse_args()

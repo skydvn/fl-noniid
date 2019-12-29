@@ -7,6 +7,9 @@ import csv
 from datetime import datetime
 import os
 import numpy as np
+from torch.utils.data import Dataset, DataLoader
+from torch import nn
+from trainer import Tester
 
 
 class Utils():
@@ -34,23 +37,22 @@ class Utils():
                 download=True,
                 transform=transform
             )
-
-        elif args.dataset == "cifar100":
-            data_dir = "./data/cifar100"
+        elif args.dataset == "cifar10":
+            data_dir = "./data/cifar10"
 
             transform = transforms.Compose([
                 transforms.ToTensor(),
                 transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
             ])
 
-            train_dataset = datasets.CIFAR100(
+            train_dataset = datasets.CIFAR10(
                 root=data_dir,
                 train=True,
                 download=True,
                 transform=transform
             )
 
-            test_dataset = datasets.CIFAR100(
+            test_dataset = datasets.CIFAR10(
                 root=data_dir,
                 train=False,
                 download=True,
@@ -74,7 +76,9 @@ class Utils():
         random.shuffle(idxs)
         for i in range(args.num_devices):
             users_idxs[i] = idxs[i*data_per_device:(i+1)*data_per_device]
-
+            if args.max_data_per_device:
+                users_idxs[i] = users_idxs[i][0:args.max_data_per_device]
+                
         return users_idxs
 
     def noniid_dist(self, dataset, args):
@@ -125,6 +129,9 @@ class Utils():
                         users_idxs[classes_devives[i][send_to_device]].append(idxs_labels[0, j])
                         send_to_device = (send_to_device+1)%len(classes_devives[i])
 
+                if args.max_data_per_device:
+                    for i in range(args.num_devices):
+                        users_idxs[i] = users_idxs[i][0:args.max_data_per_device]
                 """
                 # Validate results
                 tmp_list = []
@@ -179,13 +186,16 @@ class Utils():
                     sum += len(users_idxs[i])
                 print(sum)
                 """
+                if args.max_data_per_device:
+                    for i in range(args.num_devices):
+                        users_idxs[i] = users_idxs[i][0:args.max_data_per_device]
                 
                 return users_idxs
             else:
                 # Max data per device
                 max = math.floor(len(dataset)/args.num_devices)
-                # Each device get [0.5*max, max) amount of data
-                data_per_device = [int(random.uniform(max/2, max)) for i in range(args.num_devices)]
+                # Each device get [0.2*max, max) amount of data
+                data_per_device = [int(random.uniform(max/5, max)) for i in range(args.num_devices)]
 
                 users_idxs = [[] for i in range(args.num_devices)]  # Index dictionary for devices
 
@@ -214,6 +224,10 @@ class Utils():
                 for i in range(args.num_devices):
                     users_idxs[i].extend(idxs[current_idx:current_idx+remaining_data_per_device[i]])
                     current_idx += remaining_data_per_device[i]
+
+                if args.max_data_per_device:
+                    for i in range(args.num_devices):
+                        users_idxs[i] = users_idxs[i][0:args.max_data_per_device]
 
                 """
                 # Validate results
@@ -271,40 +285,107 @@ class Utils():
 
     def save_results_to_file(self, args, avg_weights_diff,
                              global_train_losses, global_test_losses,
-                             global_accuracies):
+                             global_accuracies, aucs,
+                             kappas):
         iid = "iid" if args.iid else "niid"
 
         # Create folder if it doesn't exist
         if not os.path.exists("results"):
             os.mkdir("results")
 
-        f = open(f"./results/{datetime.now()}_{args.dataset}_{args.optim}_{iid}.csv", "w")
+        f = open(f"./results/{datetime.now()}_{args.dataset}_{args.optim}_{iid}_{args.noniidness}_{args.equal_dist}_{args.class_per_device}.csv", "w")
 
         with f:
             if args.learning == "f":
                 fnames = ["round", "average weight differences",
-                        "train losses", "test losses", "test accuracies"]
+                        "train losses", "test losses", "test accuracies", 
+                        "average AUCs", "Kappas"]
             else:
                 fnames = ["round", "train losses", 
-                        "test losses", "test accuracies"]
+                        "test losses", "test accuracies", 
+                        "average AUCs", "Kappas"]
             writer = csv.DictWriter(f, fieldnames=fnames)
 
             writer.writeheader()
 
-            for i in range(len(avg_weights_diff)):
+            for i in range(len(global_train_losses)):
                 if args.learning == "f":
                     writer.writerow({
                         "round": i+1,
                         "average weight differences": avg_weights_diff[i],
                         "train losses": global_train_losses[i],
                         "test losses": global_test_losses[i],
-                        "test accuracies": global_accuracies[i]
+                        "test accuracies": global_accuracies[i],
+                        "average AUCs": aucs[i],
+                        "Kappas": kappas[i]
                     })
                 else:
                     writer.writerow({
                         "round": i+1,
                         "train losses": global_train_losses[i],
                         "test losses": global_test_losses[i],
-                        "test accuracies": global_accuracies[i]
+                        "test accuracies": global_accuracies[i],
+                        "average AUCs": aucs[i],
+                        "Kappas": kappas[i]
                     })
-        print(f"Results stored in results/{datetime.now()}_{args.dataset}_{args.optim}_{iid}.csv")
+        print(f"Results stored in results/{datetime.now()}_{args.dataset}_{args.optim}_{iid}_{args.noniidness}_{args.equal_dist}_{args.class_per_device}.csv")
+
+    def warmup_model(self, model, train_dataset, test_dataset, device, args):
+        model.to(device)
+        model.train()   # Train mode
+
+        print("Training warmup model...")
+
+        if args.optim == "sgd":
+            optimizer = torch.optim.SGD(
+                model.parameters(),
+                lr=args.lr, 
+                momentum=args.sgd_momentum
+            )
+        elif args.optim == "adagrad":
+            optimizer = torch.optim.Adagrad(
+                model.parameters(), 
+                lr=args.lr
+            )
+        else:
+            optimizer = torch.optim.Adam(
+                model.parameters(), 
+                lr=args.lr
+            )
+
+        dataloader = DataLoader(
+            train_dataset,
+            batch_size=args.bs, 
+            shuffle=True
+        )
+        
+        loss_function = nn.CrossEntropyLoss().to(device)
+
+
+        for idx, (data, target) in enumerate(dataloader):
+            model.train()   # Train mode
+
+            data, target = data.to(device), target.to(device)
+            model.zero_grad()
+            output = model(data)
+            loss = loss_function(output, target)
+            loss.backward()
+            optimizer.step()
+
+            if idx % 40 == 0:
+                accuracy, loss = Tester().test(
+                    test_dataset, 
+                    -1, 
+                    device, 
+                    copy.deepcopy(model), 
+                    args
+                )
+
+                print(f"Accuracy reaches {accuracy}")
+
+                if accuracy >= 0.6:
+                    break
+
+        print(f"Trained warmup model to accuracy {accuracy}!")
+
+        return copy.deepcopy(model.state_dict())
