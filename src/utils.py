@@ -244,6 +244,7 @@ class Utils():
 
                 return users_idxs
 
+    # Non-weighted averaging...
     def fed_avg(self, weights):
         w = copy.deepcopy(weights[0])   # Weight from first device
         for key in w.keys():

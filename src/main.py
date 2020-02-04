@@ -110,7 +110,9 @@ class FederatedLearning():
                  avg_weight_diff = 0
             avg_loss = sum(local_losses)/len(local_losses)
 
-            print(f"\n\tRound {round+1} | Average weight difference: {avg_weight_diff}")
+            if self.args.cal_para_diff:
+                print(f"\n\tRound {round+1} | Average weight difference: {avg_weight_diff}")
+
             print(f"\tRound {round+1} | Average training loss: {avg_loss}\n")
 
             global_train_losses.append(avg_loss)
@@ -153,8 +155,10 @@ class FederatedLearning():
         print(f"\nTime used: {time.strftime('%H:%M:%S', time.gmtime(end-start))}")
 
         # Print final results
-        print("\nAverage weight differences:")
-        print(f"\t{avg_weights_diff}\n")
+        if self.args.cal_para_diff:
+            print("\nAverage weight differences:")
+            print(f"\t{avg_weights_diff}\n")
+        
         print("Losses on training data:")
         print(f"\t{global_train_losses}\n")
         print("Losses on testing data:")
